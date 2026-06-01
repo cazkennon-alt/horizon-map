@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Horizon — Customer Experience Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Arial+Narrow&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --sand: #C8A97A;
+    --sand-light: #E8D5B7;
+    --sand-dark: #A07040;
+    --bg: #F0E8D8;
+    --bg-card: #EDE0CC;
+    --ink: #1C1814;
+    --ink-mid: #4A3F35;
+    --ink-light: #8C7B6A;
+    --white: #FAF6EF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    font-family: 'Arial Narrow', Arial, sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--sand);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    z-index: 100;
+  }
+  .header-title {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 17px; font-weight: 400; letter-spacing: 0.03em;
+    color: var(--ink);
+  }
+  .header-title span { color: var(--sand-dark); font-style: italic; }
+  .header-brand {
+    text-align: right;
+    line-height: 1.1;
+  }
+  .header-brand .crg {
+    font-family: 'Arial Narrow', Arial, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+    color: var(--ink); display: block;
+  }
+  .header-brand .brands {
+    font-size: 8px; letter-spacing: 0.12em; color: var(--ink-light);
+    display: block; margin-top: 1px;
+  }
+
+  /* ── Instructions bar ── */
+  .instructions {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 32px; background: var(--bg-card);
+    border-top: 0.5px solid var(--sand);
+    display: flex; align-items: center; justify-content: center;
+    gap: 32px; z-index: 100;
+  }
+  .instructions span {
+    font-size: 10px; letter-spacing: 0.08em; color: var(--ink-light);
+  }
+  .instructions i { font-size: 10px; margin-right: 4px; color: var(--sand-dark); }
+
+  /* ── Canvas ── */
+  #canvas {
+    position: fixed;
+    top: 52px; left: 0; right: 0; bottom: 32px;
+    overflow: hidden;
+    cursor: grab;
+  }
+  #canvas.grabbing { cursor: grabbing; }
+
+  #scene {
+    position: absolute;
+    width: 1400px; height: 1400px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+    transition: transform 0.05s linear;
+  }
+
+  svg#lines {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; overflow: visible;
+  }
+
+  /* ── Centre node ── */
+  .centre {
+    position: absolute;
+    left: 700px; top: 700px;
+    transform: translate(-50%, -50%);
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    background: var(--ink);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 5px; z-index: 20;
+    box-shadow: 0 0 0 8px var(--bg-card), 0 0 0 9px var(--sand);
+  }
+  .centre i { font-size: 28px; color: var(--sand-light); }
+  .centre span {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 11px; color: var(--sand-light);
+    letter-spacing: 0.1em; text-align: center; line-height: 1.3;
+  }
+
+  /* ── Phase pills ── */
+  .phase {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+  }
+  .phase-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 18px;
+    background: var(--ink);
+    color: var(--sand-light);
+    border-radius: 30px;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 15px; font-style: italic;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    cursor: default;
+  }
+  .phase-pill i { font-size: 13px; color: var(--sand); }
+
+  /* ── Tool nodes ── */
+  .tool {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: column;
+    align-items: center; gap: 5px;
+    width: 86px;
+    cursor: pointer; z-index: 10;
+    transition: transform 0.15s ease;
+  }
+  .tool:hover { transform: translate(-50%, -50%) scale(1.08); }
+  .tool:hover .tool-card { border-color: var(--sand-dark); }
+
+  .tool-card {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    background: var(--white);
+    border: 1px solid var(--sand-light);
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s;
+  }
+  .tool-card i { font-size: 19px; color: var(--ink-mid); }
+
+  .tool-name {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 12px; font-weight: 500;
+    color: var(--ink); text-align: center; line-height: 1.2;
+  }
+  .tool-sub {
+    font-size: 9px; letter-spacing: 0.06em;
+    color: var(--ink-light); text-align: center; line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  /* ── Tooltip ── */
+  #tooltip {
+    position: fixed;
+    background: var(--ink);
+    color: var(--sand-light);
+    border-radius: 10px;
+    padding: 14px 16px;
+    max-width: 240px; min-width: 180px;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    box-shadow: 0 4px 24px rgba(28,24,20,0.25);
+  }
+  #tooltip .tt-title {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 14px; font-weight: 500; font-style: italic;
+    color: var(--sand-light);
+    margin-bottom: 6px; display: block;
+  }
+  #tooltip .tt-body {
+    font-size: 11px; line-height: 1.6;
+    color: var(--sand-light); opacity: 0.85;
+  }
+  #tooltip .tt-replaces {
+    display: inline-block; margin-top: 8px;
+    font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--sand);
+    border-top: 0.5px solid rgba(200,169,122,0.3);
+    padding-top: 6px; width: 100%;
+  }
+
+  /* ── Zoom controls ── */
+  .zoom-controls {
+    position: fixed; bottom: 48px; right: 24px;
+    display: flex; flex-direction: column; gap: 4px;
+    z-index: 100;
+  }
+  .zoom-btn {
+    width: 32px; height: 32px;
+    background: var(--bg-card); border: 0.5px solid var(--sand);
+    border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--ink-mid);
+    transition: background 0.1s;
+  }
+  .zoom-btn:hover { background: var(--sand-light); }
+
+  /* ── Phase colour accent on tool icon ── */
+  .tool[data-phase="discover"] .tool-card { background: #EAF3F9; border-color: #B5D0E8; }
+  .tool[data-phase="discover"] .tool-card i { color: #1A5278; }
+  .tool[data-phase="browse"] .tool-card { background: #EEF0F8; border-color: #C5C8E8; }
+  .tool[data-phase="browse"] .tool-card i { color: #3C3489; }
+  .tool[data-phase="purchase"] .tool-card { background: #EBF5EE; border-color: #9ED4AA; }
+  .tool[data-phase="purchase"] .tool-card i { color: #1A6634; }
+  .tool[data-phase="post"] .tool-card { background: #FBF4E8; border-color: #E8C97A; }
+  .tool[data-phase="post"] .tool-card i { color: #7A5010; }
+  .tool[data-phase="service"] .tool-card { background: #FAF0EC; border-color: #E8B4A0; }
+  .tool[data-phase="service"] .tool-card i { color: #8C2A10; }
+  .tool[data-phase="retain"] .tool-card { background: #EEF5EA; border-color: #A8D090; }
+  .tool[data-phase="retain"] .tool-card i { color: #2A5A10; }
+
+  @media print {
+    html, body { overflow: visible; }
+    #canvas { position: static; overflow: visible; }
+    #scene { position: static; transform: none; width: 100%; height: auto; }
+    .zoom-controls, .instructions { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">Project <span>Horizon</span> — Customer Experience Map</div>
+  <div class="header-brand">
+    <span class="crg">COUNTRY ROAD GROUP</span>
+    <span class="brands">COUNTRY ROAD &nbsp; MIMCO &nbsp; POLITIX &nbsp; TRENERY &nbsp; WITCHERY</span>
+  </div>
+</header>
+
+<div id="canvas">
+  <div id="scene">
+    <svg id="lines"></svg>
+
+    <div class="centre">
+      <i class="fa-regular fa-user"></i>
+      <span>CRG<br>customer</span>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip">
+  <span class="tt-title"></span>
+  <div class="tt-body"></div>
+  <span class="tt-replaces"></span>
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" id="zin" title="Zoom in"><i class="fa-solid fa-plus"></i></button>
+  <button class="zoom-btn" id="zout" title="Zoom out"><i class="fa-solid fa-minus"></i></button>
+  <button class="zoom-btn" id="zreset" title="Reset"><i class="fa-solid fa-expand"></i></button>
+</div>
+
+<div class="instructions">
+  <span><i class="fa-solid fa-hand-pointer"></i>Hover tool for details</span>
+  <span><i class="fa-solid fa-arrows-up-down-left-right"></i>Drag to pan</span>
+  <span><i class="fa-solid fa-magnifying-glass-plus"></i>Scroll or +/− to zoom</span>
+  <span><i class="fa-solid fa-f"></i>Press F for fullscreen</span>
+</div>
+
+<script>
+const CX = 700, CY = 700;
+
+const phases = [
+  {
+    id: 'discover', label: 'Discover', icon: 'fa-solid fa-bullhorn',
+    angle: -90, dist: 200,
+    color: '#2980B9',
+    tools: [
+      { icon: 'fa-solid fa-envelope-open-text', name: 'Klaviyo', sub: 'Email & SMS', da: -150, tdist: 130,
+        tip: 'Replaces Tealium & Blaze. Single CDP powering personalised email journeys, SMS, push notifications, and real-time segmentation across all 5 brands.',
+        replaces: 'Tealium + Blaze' },
+      { icon: 'fa-solid fa-mobile-screen', name: 'Mobile app', sub: 'TapCart / Fuego', da: -40, tdist: 130,
+        tip: 'Managed app platform replacing the custom-built bespoke app. Campaign push, browse, wishlist, and order tracking — all in one maintained platform.',
+        replaces: 'Custom-built app' },
+    ]
+  },
+  {
+    id: 'browse', label: 'Browse', icon: 'fa-regular fa-eye',
+    angle: -25, dist: 210,
+    color: '#6C5FC7',
+    tools: [
+      { icon: 'fa-solid fa-layer-group', name: 'PIM / DAM', sub: 'Product data', da: 30, tdist: 130,
+        tip: 'Dedicated PIM for Country Road & Witchery — flexible variant model, AI-ready attributes, bulk editing at scale. Smaller brands use Shopify native enrichment.',
+        replaces: 'Gallery' },
+      { icon: 'fa-solid fa-store', name: 'Shopify CMS', sub: 'Storefront', da: -60, tdist: 130,
+        tip: 'Unified storefront across all 5 brands. Product pages powered by PIM-enriched data, replacing the bespoke headless front-end and SFCC/eStar.',
+        replaces: 'SFCC / eStar' },
+    ]
+  },
+  {
+    id: 'purchase', label: 'Purchase', icon: 'fa-solid fa-cart-shopping',
+    angle: 40, dist: 205,
+    color: '#1A7A3C',
+    tools: [
+      { icon: 'fa-solid fa-shop', name: 'Shopify', sub: 'Checkout + POS', da: 10, tdist: 130,
+        tip: 'Single checkout and POS platform across all brands — online and in-store. Unified customer auth, loyalty balance visible at checkout.',
+        replaces: 'SFCC / eStar' },
+      { icon: 'fa-solid fa-credit-card', name: 'Payments', sub: 'Unified gateway', da: 90, tdist: 120,
+        tip: 'Shopify is the central order hub. Centralised gift cards, discount codes, and payment methods. All orders — online and in-store — flow through one system.',
+        replaces: 'Fragmented gateways' },
+    ]
+  },
+  {
+    id: 'post', label: 'Post-purchase', icon: 'fa-solid fa-box-open',
+    angle: 105, dist: 200,
+    color: '#B07810',
+    tools: [
+      { icon: 'fa-solid fa-mobile-screen', name: 'Mobile app', sub: 'Order tracking', da: 80, tdist: 130,
+        tip: 'Order status, loyalty balance, wishlist — all in the managed TapCart or Fuego.io app. Klaviyo triggers transactional push at dispatch and delivery.',
+        replaces: 'Custom-built app' },
+      { icon: 'fa-solid fa-envelope', name: 'Klaviyo', sub: 'Order comms', da: 155, tdist: 120,
+        tip: 'Automated post-purchase journeys triggered by Shopify events — dispatch, delivery, review request — via email and push notification.',
+        replaces: 'Tealium + Blaze' },
+    ]
+  },
+  {
+    id: 'service', label: 'Service', icon: 'fa-solid fa-headset',
+    angle: 170, dist: 210,
+    color: '#C04020',
+    tools: [
+      { icon: 'fa-solid fa-ticket', name: 'Gorgias', sub: 'Ticketing', da: 200, tdist: 130,
+        tip: 'Replaces Salesforce Service Cloud. Agents see the full Shopify order history in one screen — no switching tools. New ticketing workflows, unified customer view.',
+        replaces: 'Salesforce Service Cloud' },
+      { icon: 'fa-solid fa-person-chalkboard', name: 'Clienteling', sub: 'In-store app', da: 140, tdist: 125,
+        tip: 'New Shopify-connected in-store capability. Associates see customer purchase history and preferences — personalised service at POS.',
+        replaces: 'None — new capability' },
+    ]
+  },
+  {
+    id: 'retain', label: 'Retain', icon: 'fa-regular fa-heart',
+    angle: 225, dist: 200,
+    color: '#3A7020',
+    tools: [
+      { icon: 'fa-solid fa-star', name: 'Loyalty', sub: 'Shopify native', da: 250, tdist: 130,
+        tip: 'Migrated from Fielo to Shopify-native loyalty. Points earned and redeemed in real time — at POS, online, and in the mobile app. No lag between channels.',
+        replaces: 'Fielo' },
+      { icon: 'fa-solid fa-chart-line', name: 'Klaviyo CDP', sub: 'Insights', da: 185, tdist: 128,
+        tip: 'Unified customer data in Klaviyo CDP enables real-time segmentation, LTV tracking, and personalised retention campaigns across all brands.',
+        replaces: 'Tealium + Blaze' },
+    ]
+  },
+];
+
+const svg = document.getElementById('lines');
+const scene = document.getElementById('scene');
+const tip = document.getElementById('tooltip');
+
+function rad(d) { return d * Math.PI / 180; }
+
+phases.forEach(ph => {
+  const ang = rad(ph.angle);
+  const px = CX + Math.cos(ang) * ph.dist;
+  const py = CY + Math.sin(ang) * ph.dist;
+
+  // Phase pill
+  const phEl = document.createElement('div');
+  phEl.className = 'phase';
+  phEl.style.left = px + 'px';
+  phEl.style.top = py + 'px';
+  phEl.innerHTML = `<div class="phase-pill"><i class="${ph.icon}"></i>${ph.label}</div>`;
+  scene.appendChild(phEl);
+
+  // Line: centre → phase
+  const lineC = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  const startX = CX + Math.cos(ang) * 56;
+  const startY = CY + Math.sin(ang) * 56;
+  const pillW = 140;
+  const endX = px - Math.cos(ang) * (pillW / 2);
+  const endY = py - Math.sin(ang) * 18;
+  lineC.setAttribute('x1', startX); lineC.setAttribute('y1', startY);
+  lineC.setAttribute('x2', endX);   lineC.setAttribute('y2', endY);
+  lineC.setAttribute('stroke', ph.color);
+  lineC.setAttribute('stroke-width', '1.5');
+  lineC.setAttribute('stroke-opacity', '0.5');
+  svg.appendChild(lineC);
+
+  // Tools
+  ph.tools.forEach(t => {
+    const tang = rad(t.da);
+    const tx = px + Math.cos(tang) * t.tdist;
+    const ty = py + Math.sin(tang) * t.tdist;
+
+    // Clamp to safe area
+    if (tx < 80 || tx > 1320 || ty < 80 || ty > 1320) return;
+
+    const tEl = document.createElement('div');
+    tEl.className = 'tool';
+    tEl.setAttribute('data-phase', ph.id);
+    tEl.style.left = tx + 'px';
+    tEl.style.top = ty + 'px';
+    tEl.innerHTML = `
+      <div class="tool-card"><i class="${t.icon}"></i></div>
+      <div class="tool-name">${t.name}</div>
+      <div class="tool-sub">${t.sub}</div>`;
+    scene.appendChild(tEl);
+
+    // Dashed line: phase → tool
+    const tline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    tline.setAttribute('x1', px); tline.setAttribute('y1', py);
+    tline.setAttribute('x2', tx); tline.setAttribute('y2', ty);
+    tline.setAttribute('stroke', ph.color);
+    tline.setAttribute('stroke-width', '0.8');
+    tline.setAttribute('stroke-opacity', '0.35');
+    tline.setAttribute('stroke-dasharray', '5 4');
+    svg.appendChild(tline);
+
+    // Tooltip
+    tEl.addEventListener('mouseenter', function(e) {
+      tip.querySelector('.tt-title').textContent = t.name;
+      tip.querySelector('.tt-body').textContent = t.tip;
+      const rep = tip.querySelector('.tt-replaces');
+      if (t.replaces) {
+        rep.textContent = 'Replaces: ' + t.replaces;
+        rep.style.display = 'block';
+      } else {
+        rep.style.display = 'none';
+      }
+      positionTip(e);
+      tip.style.opacity = '1';
+    });
+    tEl.addEventListener('mousemove', positionTip);
+    tEl.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+  });
+});
+
+function positionTip(e) {
+  let x = e.clientX + 16, y = e.clientY - 20;
+  if (x + 250 > window.innerWidth) x = e.clientX - 260;
+  if (y + 180 > window.innerHeight) y = e.clientY - 160;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
+// ── Pan & zoom ──
+const canvas = document.getElementById('canvas');
+let scale = 0.75, offX = 0, offY = 0;
+let dragging = false, lastX = 0, lastY = 0;
+
+function applyTransform() {
+  scene.style.transform = `translate(calc(-50% + ${offX}px), calc(-50% + ${offY}px)) scale(${scale})`;
+}
+applyTransform();
+
+canvas.addEventListener('mousedown', e => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  canvas.classList.add('grabbing');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  offX += e.clientX - lastX; offY += e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => { dragging = false; canvas.classList.remove('grabbing'); });
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.08 : 0.08;
+  scale = Math.min(2, Math.max(0.35, scale + delta));
+  applyTransform();
+}, { passive: false });
+
+document.getElementById('zin').onclick = () => { scale = Math.min(2, scale + 0.12); applyTransform(); };
+document.getElementById('zout').onclick = () => { scale = Math.max(0.35, scale - 0.12); applyTransform(); };
+document.getElementById('zreset').onclick = () => { scale = 0.75; offX = 0; offY = 0; applyTransform(); };
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'f' || e.key === 'F') {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+
+// Touch support
+let lastTouchDist = null;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) { dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }
+  if (e.touches.length === 2) {
+    lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  }
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  if (e.touches.length === 1 && dragging) {
+    offX += e.touches[0].clientX - lastX; offY += e.touches[0].clientY - lastY;
+    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; applyTransform();
+  }
+  if (e.touches.length === 2 && lastTouchDist) {
+    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    scale = Math.min(2, Math.max(0.35, scale * (d / lastTouchDist)));
+    lastTouchDist = d; applyTransform();
+  }
+}, { passive: true });
+canvas.addEventListener('touchend', () => { dragging = false; lastTouchDist = null; });
+</script>
+</body>
+</html>
